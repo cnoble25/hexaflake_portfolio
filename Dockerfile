@@ -8,9 +8,9 @@
 FROM nginx:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY index.html styles.css source.js main.js atmosphere.js favicon.svg /usr/share/nginx/html/
+COPY index.html styles.css source.js main.js atmosphere.js landscape.js wildlife.js favicon.svg /usr/share/nginx/html/
 COPY vendor /usr/share/nginx/html/vendor
-COPY images /usr/share/nginx/html/images
+COPY models /usr/share/nginx/html/models
 COPY content /usr/share/nginx/html/content
 
 EXPOSE 80

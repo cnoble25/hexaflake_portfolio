@@ -15,8 +15,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
-ASSETS = ["styles.css", "vendor/marked.min.js", "source.js", "main.js", "atmosphere.js"]
-STATIC = ["favicon.svg", "images/winter-field-2560.jpg", "images/winter-field-1400.jpg"]
+ASSETS = [
+    "styles.css", "vendor/marked.min.js", "vendor/three.module.min.js",
+    "source.js", "main.js", "atmosphere.js", "landscape.js", "wildlife.js",
+]
+STATIC = ["favicon.svg"]
+# Copied as-is: three's add-ons import each other by relative path, and models are fetched by URL.
+STATIC_DIRS = ["vendor/three-addons", "models"]
 
 
 def main():
@@ -31,10 +36,13 @@ def main():
         digest = hashlib.sha256(data).hexdigest()[:10]
         name = f"assets/{src.stem}.{digest}{src.suffix}"
         (DIST / name).write_bytes(data)
-        pattern = re.compile(r'(href|src)="' + re.escape(rel) + '"')
-        html, count = pattern.subn(lambda m: f'{m.group(1)}="/{name}"', html)
+        # Any quoted reference: src/href attributes and the import map's JSON.
+        pattern = re.compile('"(?:\\./)?' + re.escape(rel) + '"')
+        html, count = pattern.subn(f'"/{name}"', html)
         if count != 1:
             raise SystemExit(f"index.html should reference {rel} exactly once (found {count})")
+    for rel in STATIC_DIRS:
+        shutil.copytree(ROOT / rel, DIST / rel)
     for rel in STATIC:
         (DIST / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(ROOT / rel, DIST / rel)

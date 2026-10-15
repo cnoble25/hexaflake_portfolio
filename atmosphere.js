@@ -21,7 +21,7 @@
 
   // density: per 100,000 square pixels. size: radius in px. speed: px per second, downward.
   const LAYERS = [
-    { name: "far", density: 9, size: [0.8, 1.7], speed: [14, 28], sway: 4, alpha: [0.35, 0.65], ctx: bctx },
+    { name: "far", density: 3, size: [0.8, 1.7], speed: [14, 28], sway: 4, alpha: [0.35, 0.65], ctx: bctx },
     { name: "mid", density: 2.6, size: [4, 8], speed: [45, 85], sway: 10, alpha: [0.6, 0.9], ctx: bctx },
     { name: "near", density: 0.3, size: [20, 44], speed: [170, 270], sway: 18, alpha: [0.16, 0.3], ctx: fctx },
   ];

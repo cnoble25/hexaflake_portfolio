@@ -4,8 +4,10 @@
 !source.js
 !main.js
 !atmosphere.js
+!landscape.js
+!wildlife.js
+!models
 !favicon.svg
 !nginx.conf
 !vendor
-!images
 !content

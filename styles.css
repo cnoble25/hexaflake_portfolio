@@ -1,7 +1,7 @@
 :root {
-  --halo: rgba(240, 246, 252, 0.72);
-  --halo-edge: rgba(240, 246, 252, 0.38);
-  --veil: rgba(225, 236, 246, 0.18);
+  --halo: rgba(240, 246, 252, 0.62);
+  --halo-edge: rgba(240, 246, 252, 0.22);
+  --veil: rgba(225, 236, 246, 0.06);
   /* Winter sky at the top of the page fading to snow at the bottom. */
   --sky: #CCDAE8;
   --paper: #E9F0F6;
@@ -21,9 +21,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --halo: rgba(13, 22, 38, 0.62);
-    --halo-edge: rgba(13, 22, 38, 0.38);
-    --veil: rgba(8, 14, 30, 0.62);
+    --halo: rgba(13, 22, 38, 0.6);
+    --halo-edge: rgba(13, 22, 38, 0.3);
+    --veil: rgba(8, 14, 30, 0.45);
     --sky: #070E1A;
     --paper: #12203A;
     --plate: #172946;
@@ -82,13 +82,12 @@ body.is-reading #snow-front { opacity: 0.25; }
   position: fixed;
   inset: -4%;
   z-index: -1;
-  background:
-    radial-gradient(ellipse 46% 58% at 50% 50%, var(--halo) 0%, var(--halo-edge) 55%, transparent 80%),
-    linear-gradient(var(--veil), var(--veil)),
-    url("/images/winter-field-2560.jpg") 50% 78% / cover no-repeat;
+  /* Shown until (or instead of, without WebGL) the 3D landscape. */
+  background: linear-gradient(180deg, var(--sky), var(--paper));
   transform-origin: 50% 58%;
   transform: scale(calc(var(--intro-scale, 1.1) * var(--drift-scale, 1)));
-  filter: blur(var(--intro-blur, 2px));
+  /* A slight defocus behind the content; light enough that the wildlife still reads. */
+  filter: blur(var(--intro-blur, 0.7px));
   will-change: transform, filter;
 }
 
@@ -109,39 +108,36 @@ body.is-reading #snow-front { opacity: 0.25; }
 #intro-flake svg { filter: drop-shadow(0 0 1.2px rgba(40, 90, 150, 0.55)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.7)); }
 
 /* While the opening shot plays, the page chrome waits. */
-.top, .hint, .credit, .zoom-out { transition: opacity 0.8s; }
+.top, .hint, .zoom-out { transition: opacity 0.8s; }
 body.is-intro .top,
-body.is-intro .hint,
-body.is-intro .credit { opacity: 0; pointer-events: none; }
+body.is-intro .hint { opacity: 0; pointer-events: none; }
+
+/* The 3D winter landscape (landscape.js) renders here. */
+#backdrop .landscape-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* A frosted glow behind the flake keeps its arms readable against the scene. */
+#backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 46% 58% at 50% 50%, var(--halo) 0%, var(--halo-edge) 55%, transparent 80%),
+    linear-gradient(var(--veil), var(--veil));
+}
 
 @media (max-width: 900px) {
-  #backdrop {
+  #backdrop::after {
     background:
       radial-gradient(ellipse 60% 46% at 50% 50%, var(--halo) 0%, var(--halo-edge) 55%, transparent 80%),
-      linear-gradient(var(--veil), var(--veil)),
-      url("/images/winter-field-1400.jpg") 50% 78% / cover no-repeat;
+      linear-gradient(var(--veil), var(--veil));
   }
-}
-
-.credit {
-  position: fixed;
-  left: 20px;
-  bottom: 16px;
-  z-index: 2;
-  margin: 0;
-  font-size: 12px;
-}
-
-.credit a {
-  color: var(--ink-soft);
-  text-decoration: none;
-}
-
-.credit a:hover { color: var(--ink); text-decoration: underline; }
-.credit a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-
-@media (max-width: 559px) {
-  .credit { left: 12px; bottom: 20px; font-size: 11px; }
 }
 
 #labels {
@@ -610,6 +606,17 @@ body.is-intro .credit { opacity: 0; pointer-events: none; }
 .outline > nav > ul { padding: 0; }
 
 .outline li { margin: 2px 0; }
+
+.outline-credits {
+  margin: 20px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.outline-credits a { color: inherit; }
 
 .outline .expand {
   width: 26px;

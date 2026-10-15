@@ -980,7 +980,9 @@
     const scale = 1 + Math.min(depth, 4) * 0.025;
     if (Math.abs(scale - backdropScale) < 0.0005) return;
     backdropScale = scale;
-    backdrop.style.setProperty("--drift-scale", scale.toFixed(4));
+    // The 3D landscape dollies forward instead; the flat fallback just scales a little.
+    if (window.landscape) window.landscape.setDepth(depth);
+    else backdrop.style.setProperty("--drift-scale", scale.toFixed(4));
   }
 
   // ---------------------------------------------------------------------------
@@ -998,7 +1000,6 @@
 
     introRunning = true;
     document.body.classList.add("is-intro");
-    flake.style.visibility = "visible";
     backdrop.style.setProperty("--intro-scale", "1");
     backdrop.style.setProperty("--intro-blur", "0px");
 
@@ -1023,7 +1024,7 @@
       handOff();
       flake.style.visibility = "hidden";
       backdrop.style.setProperty("--intro-scale", "1.1");
-      backdrop.style.setProperty("--intro-blur", "2px");
+      backdrop.style.setProperty("--intro-blur", "0.7px");
       for (const type of ["pointerdown", "keydown", "wheel"]) removeEventListener(type, finish, true);
     }
     for (const type of ["pointerdown", "keydown", "wheel"]) addEventListener(type, finish, { capture: true, passive: true });
@@ -1048,7 +1049,7 @@
         size = 48 * Math.pow((1.85 * fitR) / 48, e);
         rot = 100 + (turns - 100) * e;
         backdrop.style.setProperty("--intro-scale", (1 + 0.1 * e).toFixed(4));
-        backdrop.style.setProperty("--intro-blur", (2 * e).toFixed(2) + "px");
+        backdrop.style.setProperty("--intro-blur", (0.7 * e).toFixed(2) + "px");
         if (p > 0.72) handOff();
         // The real crystal grows out of it while it dissolves.
         opacity = 1 - clamp((t - INTRO.fall - INTRO.zoom * 0.72) / INTRO.fade);
@@ -1069,6 +1070,7 @@
       previewParam !== null && ["localhost", "127.0.0.1"].includes(location.hostname) ? Number(previewParam) : NaN;
     if (Number.isFinite(preview) && preview >= 0) {
       for (const type of ["pointerdown", "keydown", "wheel"]) removeEventListener(type, finish, true);
+      flake.style.visibility = "visible";
       if (!pose(preview)) finish();
       const handOffAt = INTRO.fall + INTRO.zoom * 0.72;
       if (preview > handOffAt) revealOverride = clamp((preview - handOffAt) / 1500);
@@ -1077,11 +1079,26 @@
 
     function step(now) {
       if (done) return;
-      if (start == null) start = now;
+      if (start == null) {
+        start = now;
+        flake.style.visibility = "visible";
+      }
       if (!pose(now - start)) return finish();
       requestAnimationFrame(step);
     }
-    requestAnimationFrame(step);
+    // Let the 3D landscape build and draw its first frame before anything moves, so a slow
+    // setup can't stutter the fall (capped, in case WebGL is slow or missing).
+    let begun = false;
+    const begin = () => {
+      if (begun) return;
+      begun = true;
+      requestAnimationFrame(step);
+    };
+    if (window.landscapeReady || !document.querySelector('script[src*="landscape"]')) begin();
+    else {
+      const timer = setTimeout(begin, 1500);
+      addEventListener("landscape-ready", () => { clearTimeout(timer); begin(); }, { once: true });
+    }
   }
 
   // ---------------------------------------------------------------------------

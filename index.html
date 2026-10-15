@@ -48,7 +48,6 @@
 
   <p class="status" id="status" role="alert" hidden></p>
   <p class="caption" id="caption"></p>
-  <p class="credit"><a href="https://magnific.com" target="_blank" rel="noopener">Background art: Magnific</a></p>
   <p class="hint" id="hint">Click a hexagon to open it. Scroll or press Esc to step back out.</p>
   <button class="btn zoom-out" id="zoom-out" type="button" hidden>Zoom out</button>
 
@@ -58,6 +57,12 @@
       <button class="btn" type="button" id="outline-close">Close</button>
     </div>
     <nav id="outline-list"></nav>
+    <p class="outline-credits">
+      Wildlife models: fox, deer by Quaternius (CC0); snowman by Kenney (CC0); owl by Gobkit (CC0);
+      "squirrel animation" by blam, modified
+      (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY 4.0</a>);
+      cardinal adapted from mirada's parrot (Apache-2.0). Built with three.js.
+    </p>
   </dialog>
 
   <div class="sr-only" id="live" aria-live="polite"></div>
@@ -67,5 +72,11 @@
   <script src="source.js"></script>
   <script src="main.js"></script>
   <script src="atmosphere.js"></script>
+  <script type="importmap">{ "imports": {
+    "three": "./vendor/three.module.min.js",
+    "three/addons/": "./vendor/three-addons/",
+    "wildlife": "./wildlife.js"
+  } }</script>
+  <script type="module" src="landscape.js"></script>
 </body>
 </html>

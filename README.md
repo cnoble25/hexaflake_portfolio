@@ -2,7 +2,7 @@
 
 My portfolio at **[noblec.us](https://noblec.us)**: one big snowflake you can zoom into. Every folder of content is a hexagonal plate with arms reaching to what's inside it, and every markdown file is a card. Click a plate to fly into it; scroll out or press Esc to step back.
 
-It's plain HTML, CSS and JavaScript, with no framework, bundler or npm dependencies. The fractal is drawn on a canvas, labels and cards are DOM laid over it, and folders are loaded only as you open them, so the tree can go as deep as the content does.
+It's plain HTML, CSS and JavaScript, with no framework, bundler or npm dependencies. The fractal is drawn on a canvas, labels and cards are DOM laid over it, and folders are loaded only as you open them, so the tree can go as deep as the content does. Behind it is a winter landscape built in WebGL with three.js: sky, misty mountains, a forest line, rolling snow and cartoon snow-laden trees, all generated in code, with snow falling through it. Wildlife wanders through: deer stop to graze, squirrels scamper between trees and up the trunks, a white fox stalks them (usually the squirrel gets away; now and then the fox carries one off), cardinals swoop past a snowman, and at night an owl turns up in a frosted tree. The fox, deer and squirrels plant their feet on the slopes with leg IK. A small director keeps it lively but calm: always at least one animal, at most 8 (5 on phones), nothing new while you're reading a card, and no motion at all with reduced motion.
 
 ## Where the content comes from
 
@@ -20,8 +20,6 @@ python3 scripts/vfs.py sync vfs-new.json              # push changed cards (back
 `scripts/vfs.py` needs an admin token in `.admin_token` and also does `tree`, `backup`, `add`, `edit`, `mv`, `rm`, `replace` and `restore`. To run the site from the local `content/` folder instead, set `VFS_API` to `null` in `source.js`.
 
 ## Run it locally
-
-The background art is licensed stock and **isn't in this repo**. Put a landscape image at `images/winter-field-2560.jpg` and `images/winter-field-1400.jpg` first; without them, the site falls back to a plain sky gradient (and the Docker build needs the folder to exist).
 
 ```sh
 docker build -t hexaflake-portfolio .
@@ -41,4 +39,4 @@ This builds `dist/` with fingerprinted assets, syncs it to S3, removes old files
 
 ## Credits
 
-Background art: [Magnific](https://magnific.com). Fonts: Baloo 2 and Bricolage Grotesque (Google Fonts). Markdown: [marked](https://github.com/markedjs/marked).
+3D: [three.js](https://threejs.org). Wildlife models: Quaternius, Kenney and Gobkit (CC0), blam's squirrel (CC-BY 4.0), and mirada's parrot (Apache-2.0); see [`models/CREDITS.md`](models/CREDITS.md). Fonts: Baloo 2 and Bricolage Grotesque (Google Fonts). Markdown: [marked](https://github.com/markedjs/marked). The landscape is modeled on a winter illustration from [Magnific](https://magnific.com).
