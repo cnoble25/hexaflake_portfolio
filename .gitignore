@@ -1,0 +1,12 @@
+# Admin credentials and local copies of the live VFS
+.admin_token
+backups/
+vfs-new.json
+
+# Build output
+dist/
+__pycache__/
+.DS_Store
+
+# Licensed stock art (Magnific): used on the site, not redistributed. Keep a local copy.
+images/

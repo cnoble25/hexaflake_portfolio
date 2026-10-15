@@ -1,0 +1,667 @@
+:root {
+  --halo: rgba(240, 246, 252, 0.72);
+  --halo-edge: rgba(240, 246, 252, 0.38);
+  --veil: rgba(225, 236, 246, 0.18);
+  /* Winter sky at the top of the page fading to snow at the bottom. */
+  --sky: #CCDAE8;
+  --paper: #E9F0F6;
+  --plate: #FBFDFF;
+  --ink: #142640;
+  --ink-soft: #4A5E78;
+  --line: rgba(20, 38, 64, 0.14);
+  --ice: #3C78B4;
+  --snow: #FFFFFF;
+  /* Snow against a bright sky reads blue-grey, not white. */
+  --snow-shade: #A3B9D1;
+  --font: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  /* Display face for names and titles: rounded, like the packed snow in the background art. */
+  --display: "Baloo 2", "Bricolage Grotesque", system-ui, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --halo: rgba(13, 22, 38, 0.62);
+    --halo-edge: rgba(13, 22, 38, 0.38);
+    --veil: rgba(8, 14, 30, 0.62);
+    --sky: #070E1A;
+    --paper: #12203A;
+    --plate: #172946;
+    --ink: #E8F0F8;
+    --ink-soft: #9DB0C8;
+    --line: rgba(232, 240, 248, 0.14);
+    --ice: #A8D2F0;
+    --snow: #EAF4FF;
+    --snow-shade: #EAF4FF;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Only the root gets the fallback sky; body stays transparent so the backdrop shows. */
+html { background: linear-gradient(180deg, var(--sky), var(--paper)) fixed var(--paper); }
+
+#snow-back,
+#snow-front,
+#flake {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The atmosphere is decoration only: clicks pass straight through it. */
+#snow-back,
+#snow-front { pointer-events: none; }
+
+/* Out-of-focus flakes in front step back while a card is open. */
+#snow-front { transition: opacity 0.6s; }
+body.is-reading #snow-front { opacity: 0.25; }
+
+/* The snowy field behind everything. It drifts a little as you zoom (set from main.js), and a
+   frosted glow behind the flake keeps its arms readable against the sky. */
+#backdrop {
+  position: fixed;
+  inset: -4%;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 46% 58% at 50% 50%, var(--halo) 0%, var(--halo-edge) 55%, transparent 80%),
+    linear-gradient(var(--veil), var(--veil)),
+    url("/images/winter-field-2560.jpg") 50% 78% / cover no-repeat;
+  transform-origin: 50% 58%;
+  transform: scale(calc(var(--intro-scale, 1.1) * var(--drift-scale, 1)));
+  filter: blur(var(--intro-blur, 2px));
+  will-change: transform, filter;
+}
+
+#intro-flake {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+#intro-flake svg { display: block; width: 100%; height: 100%; overflow: visible; }
+#intro-flake .arms { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; }
+#intro-flake .core { fill: #fff; stroke: none; }
+#intro-flake svg { filter: drop-shadow(0 0 1.2px rgba(40, 90, 150, 0.55)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.7)); }
+
+/* While the opening shot plays, the page chrome waits. */
+.top, .hint, .credit, .zoom-out { transition: opacity 0.8s; }
+body.is-intro .top,
+body.is-intro .hint,
+body.is-intro .credit { opacity: 0; pointer-events: none; }
+
+@media (max-width: 900px) {
+  #backdrop {
+    background:
+      radial-gradient(ellipse 60% 46% at 50% 50%, var(--halo) 0%, var(--halo-edge) 55%, transparent 80%),
+      linear-gradient(var(--veil), var(--veil)),
+      url("/images/winter-field-1400.jpg") 50% 78% / cover no-repeat;
+  }
+}
+
+.credit {
+  position: fixed;
+  left: 20px;
+  bottom: 16px;
+  z-index: 2;
+  margin: 0;
+  font-size: 12px;
+}
+
+.credit a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.credit a:hover { color: var(--ink); text-decoration: underline; }
+.credit a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+@media (max-width: 559px) {
+  .credit { left: 12px; bottom: 20px; font-size: 11px; }
+}
+
+#labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---------- labels on hexagons ---------- */
+
+.node-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0.1em 0.25em;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--label-base, 16px);
+  line-height: 1.05;
+  white-space: nowrap;
+  text-align: center;
+  text-shadow: 0 0 0.1em var(--plate), 0 0 0.25em var(--plate);
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.node-label.is-focus { cursor: default; }
+
+/* inline-block so a two-line title measures as its longest line */
+.node-label .t {
+  display: inline-block;
+  font-family: var(--display);
+  font-size: 1.05em;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.node-label:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.node-label .b:empty { display: none; }
+
+.node-label .b {
+  position: absolute;
+  top: calc(100% + 0.7em);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: var(--blurb-width, 240px);
+  font-size: var(--blurb-size, 15px);
+  font-weight: 400;
+  font-stretch: 100%;
+  letter-spacing: 0;
+  line-height: 1.4;
+  white-space: normal;
+  text-wrap: balance;
+  color: var(--ink-soft);
+  text-shadow: none;
+}
+
+.node-label.is-root .t { font-size: 1.12em; font-weight: 700; letter-spacing: -0.01em; }
+
+/* ---------- leaf cards ---------- */
+
+/* The frame covers the card's hexagon and moves with it; it never takes clicks itself. */
+.card-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 8px 12px 24px;
+  background: transparent;
+  color: var(--ink);
+  /* --k shrinks a card's text so it can fit inside its hexagon. */
+  font-size: calc(var(--k, 1) * 16px);
+  scrollbar-width: thin;
+  user-select: text;
+  -webkit-user-select: text;
+  outline: none;
+}
+
+/* Hexagon layout: two shaped wedges push every line in to the plate's slanted edges, and a
+   spacer centers the text vertically. Long cards fall back to a scrolling column. */
+.card-shape,
+.card-spacer { display: none; }
+
+.card.is-hex { padding: 0; overflow: hidden; }
+.card.is-hex .card-shape { display: block; }
+.card.is-hex .card-spacer { display: block; }
+.card-shape.l { float: left; }
+.card-shape.r { float: right; }
+
+.card.is-flat .card-shape.l { shape-outside: polygon(0 0, 100% 0, 0 50%, 100% 100%, 0 100%); }
+.card.is-flat .card-shape.r { shape-outside: polygon(0 0, 100% 0, 100% 100%, 0 100%, 100% 50%); }
+.card.is-pointy .card-shape.l { shape-outside: polygon(0 0, 100% 0, 0 25%, 0 75%, 100% 100%, 0 100%); }
+.card.is-pointy .card-shape.r { shape-outside: polygon(0 0, 100% 0, 100% 100%, 0 100%, 100% 75%, 100% 25%); }
+
+.card.is-hex p,
+.card.is-hex ul,
+.card.is-hex ol { max-width: none; }
+
+.card-frame.is-live .card { pointer-events: auto; }
+
+/* While there's more below, the bottom edge fades out. */
+.card.has-more { mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); }
+
+/* On larger screens the scrollbar runs along the hexagon's right-hand edges instead. */
+@media (min-width: 560px) {
+  .card { scrollbar-width: none; }
+  .card::-webkit-scrollbar { display: none; }
+}
+
+.card-track {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.card-frame.is-scrollable .card-track { opacity: 1; }
+.card-track path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.card-track .rail { stroke: color-mix(in srgb, var(--hue) 22%, transparent); stroke-width: 4; }
+.card-track .thumb { stroke: var(--hue); stroke-width: 6; }
+.card-track .hit { stroke: transparent; stroke-width: 24; cursor: pointer; }
+.card-frame.is-live.is-scrollable .card-track .hit { pointer-events: stroke; }
+
+.card h1 {
+  margin: 0 0 0.25em;
+  font-family: var(--display);
+  font-size: 2.5em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+.card h2,
+.card h3 {
+  margin: 1.2em 0 0.35em;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.card h2 { font-size: 1.3em; }
+.card h3 { font-size: 1.15em; }
+
+.card ul:not(.tags, .links),
+.card ol {
+  max-width: 60ch;
+  margin: 0 0 0.9em;
+  padding-left: 1.3em;
+  font-size: 0.97em;
+  line-height: 1.55;
+}
+
+.card ul:not(.tags, .links) { list-style: none; }
+
+/* Loose lists wrap each item in a paragraph; keep it on the bullet's line. */
+.card li > p { display: inline; margin: 0; }
+
+.card ul:not(.tags, .links) > li::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.48em;
+  margin: 0 0.6em 0 -1.15em;
+  background: var(--hue);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+
+.card img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+}
+
+.card code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.9em;
+  padding: 0.1em 0.3em;
+  background: color-mix(in srgb, var(--hue) 10%, var(--plate));
+}
+
+.card pre {
+  overflow: auto;
+  padding: 12px 14px;
+  font-size: 0.875em;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--hue) 8%, var(--plate));
+}
+
+.card pre code { padding: 0; background: none; }
+
+.card blockquote {
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 3px solid var(--hue);
+  color: var(--ink-soft);
+}
+
+.card hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.5em 0;
+}
+
+.card table { border-collapse: collapse; font-size: 0.94em; margin: 1em 0; }
+.card th, .card td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+
+.card .card-status { color: var(--ink-soft); }
+
+.card .meta {
+  margin: 0 0 1.3em;
+  font-size: 0.94em;
+  font-weight: 560;
+  color: var(--ink-soft);
+}
+
+.card .meta em { font-style: normal; }
+
+.card .meta::before,
+.card .tags li::before {
+  content: "";
+  display: inline-block;
+  margin-right: 0.55em;
+  width: 0.7em;
+  height: 0.6em;
+  background: var(--hue);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+
+.card p {
+  max-width: 60ch;
+  margin: 0 0 0.8em;
+  font-size: 0.97em;
+  line-height: 1.55;
+}
+
+.card .tags,
+.card .links {
+  list-style: none;
+  padding: 0;
+  margin: 1.4em 0 0;
+  line-height: 1.9;
+}
+
+.card .tags li,
+.card .links li {
+  display: inline-block;
+  margin-right: 1.3em;
+  white-space: nowrap;
+}
+
+.card .tags { font-size: 0.9em; color: var(--ink-soft); }
+.card .tags li::before { width: 0.55em; height: 0.48em; margin-right: 0.45em; }
+
+.card .links { font-weight: 560; }
+.card p + .links, .card .tags + .links, .card .tags + p { margin-top: 1.2em; }
+
+.card a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hue);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.card a:hover { text-decoration-thickness: 3px; }
+.card a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+@media (max-width: 559px) {
+  .card {
+    padding: 22px 20px 26px;
+    background: var(--plate);
+    border-top: 4px solid var(--hue);
+    box-shadow: 0 1px 0 var(--line), 0 0 0 1px var(--line);
+  }
+}
+
+/* ---------- chrome ---------- */
+
+.top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  pointer-events: none;
+}
+
+.top > * { pointer-events: auto; }
+
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+}
+
+.crumbs li + li::before {
+  content: "/";
+  margin: 0 0.45em;
+  color: var(--ink-soft);
+}
+
+.crumbs a {
+  display: inline-block;
+  padding: 6px 2px;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.crumbs a:hover { color: var(--ink); }
+.crumbs a[aria-current] { color: var(--ink); font-weight: 620; }
+.crumbs a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+@media (max-width: 559px) {
+  .top { padding: 12px 12px; }
+  .crumbs li:not(:nth-last-child(-n + 2)) { display: none; }
+  .crumbs li:nth-last-child(2)::before { content: none; }
+}
+
+/* Buttons are stretched hexagons to echo the grid. */
+.btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 560;
+  padding: 9px 20px;
+  border: 0;
+  background: var(--plate);
+  color: var(--ink);
+  cursor: pointer;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+}
+
+.btn:hover { background: color-mix(in srgb, var(--plate) 70%, var(--ink) 8%); }
+.btn:focus-visible { background: var(--ink); color: var(--paper); outline: none; }
+
+.zoom-out {
+  position: fixed;
+  right: 20px;
+  bottom: 16px;
+  z-index: 2;
+}
+
+.hint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  margin: 0;
+  padding: 0 120px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-soft);
+  pointer-events: none;
+  transition: opacity 0.6s;
+}
+
+.hint.is-gone { opacity: 0; }
+
+.status {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 14.5px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* On small screens the center slot is too tight for blurbs, so they show here instead. */
+.caption {
+  display: none;
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 46px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+@media (max-width: 559px) {
+  .hint { padding: 0 16px; bottom: 56px; }
+  .caption:not(:empty) { display: block; bottom: 88px; }
+  .zoom-out { right: 12px; bottom: 12px; }
+}
+
+/* ---------- outline dialog ---------- */
+
+.outline {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(80vh, 720px);
+  padding: 24px 28px 28px;
+  border: 0;
+  background: var(--plate);
+  color: var(--ink);
+}
+
+.outline::backdrop {
+  background: color-mix(in srgb, var(--paper) 70%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.outline-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.outline h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.outline .btn { background: var(--paper); }
+
+.outline ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 18px;
+}
+
+.outline > nav > ul { padding: 0; }
+
+.outline li { margin: 2px 0; }
+
+.outline .expand {
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.outline .expand:hover { color: var(--ink); }
+.outline .expand:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+.outline a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 4px 0;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.outline a::before {
+  content: "";
+  width: 0.62em;
+  height: 0.54em;
+  background: var(--hue, var(--ink));
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+
+.outline a:hover { text-decoration: underline; text-decoration-color: var(--hue, var(--ink)); text-underline-offset: 3px; }
+.outline a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.outline > nav > ul > li > a { font-weight: 620; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.noscript {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+}
